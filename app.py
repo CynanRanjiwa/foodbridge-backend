@@ -8,7 +8,7 @@ from models import db, User, Donation, Volunteer, Notification, Event, Inventory
 from utils import generate_verification_code, send_verification_email
 import bcrypt
 
-app = Flask(__name__)  # Create Flask app
+app = Flask(_name_)  # Create Flask app
 app.config.from_object(Config)  # Load configuration
 
 db.init_app(app)  # Initialize SQLAlchemy
@@ -172,5 +172,5 @@ def mark_notifications_as_read(user_id):
 
     return jsonify({'message': 'All notifications marked as read.'}), 200
 
-if __name__ == '__main__':
+if _name_ == '_main_':
     app.run(debug=True)  # Run the app
