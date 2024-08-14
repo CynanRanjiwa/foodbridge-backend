@@ -53,11 +53,14 @@ class Event(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(120), nullable=False)
-    description = db.Column(db.Text)
-    location = db.Column(db.String(255), nullable=False)
+    description = db.Column(db.Text, nullable=False)
+    location = db.Column(db.String(120), nullable=False)
     date = db.Column(db.DateTime, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relationship with Volunteer
+    volunteers = db.relationship('Volunteer', backref='event', lazy=True)
 
 class Inventory(db.Model):
     __tablename__ = 'inventory'
