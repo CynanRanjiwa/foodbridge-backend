@@ -6,29 +6,25 @@ from flask_jwt_extended import JWTManager, create_access_token, jwt_required, ge
 from flask_cors import CORS
 from config import Config
 from models import db, User, Donation, Volunteer, Notification, Event, Inventory, Feedback
-from utils import generate_verification_code, send_verification_email
 import bcrypt
 from dotenv import load_dotenv
 import os
-from extensions import mail
 
 load_dotenv()
 
 app = Flask(__name__)
 app.config.from_object(Config)
 
-# Initialize CORS
-CORS(app)
+# Initialize CORS with specific settings if needed
+CORS(app, resources={r"/*": {"origins": "*"}})  # Adjust origins as needed
 
-mail.init_app(app)
+mail = Mail(app)
 db.init_app(app)
 migrate = Migrate(app, db)
-mail = Mail(app)
 jwt = JWTManager(app)
 
 @app.route('/register', methods=['POST'])
 def register():
-    """Register a new user and send a verification email."""
     try:
         data = request.get_json()
         username = data.get('username')
@@ -43,10 +39,6 @@ def register():
         db.session.add(new_user)
         db.session.commit()
 
-        # Uncomment these lines to test email functionality
-        # verification_code = generate_verification_code()
-        # send_verification_email(email, verification_code)
-
         return jsonify({'message': 'User registered successfully. Please check your email for verification.'}), 201
 
     except Exception as e:
@@ -54,7 +46,6 @@ def register():
 
 @app.route('/login', methods=['POST'])
 def login():
-    """Log in a user and return a JWT token."""
     try:
         data = request.get_json()
         email = data.get('email')
@@ -73,7 +64,6 @@ def login():
 @app.route('/donate', methods=['POST'])
 @jwt_required()
 def donate():
-    """Create a new donation record."""
     try:
         data = request.get_json()
         user_id = get_jwt_identity()
@@ -95,7 +85,6 @@ def donate():
 @app.route('/volunteer', methods=['POST'])
 @jwt_required()
 def volunteer():
-    """Register a user as a volunteer for an event."""
     try:
         data = request.get_json()
         user_id = get_jwt_identity()
@@ -116,7 +105,6 @@ def volunteer():
 @app.route('/notifications', methods=['GET'])
 @jwt_required()
 def get_notifications():
-    """Get all notifications for a user."""
     try:
         user_id = get_jwt_identity()
 
@@ -131,7 +119,6 @@ def get_notifications():
 @app.route('/events', methods=['POST'])
 @jwt_required()
 def create_event():
-    """Create a new event."""
     try:
         data = request.get_json()
         name = data.get('name')
@@ -151,10 +138,28 @@ def create_event():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+@app.route('/events', methods=['GET'])
+def get_events():
+    try:
+        events = Event.query.all()
+        result = [
+            {
+                'id': event.id,
+                'name': event.name,
+                'description': event.description,
+                'location': event.location,
+                'date': event.date.strftime('%Y-%m-%d')  # Format date as a string
+            }
+            for event in events
+        ]
+        return jsonify(result), 200
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 @app.route('/inventory', methods=['POST'])
 @jwt_required()
 def add_inventory_item():
-    """Add a new item to the inventory."""
     try:
         data = request.get_json()
         name = data.get('name')
@@ -176,7 +181,6 @@ def add_inventory_item():
 @app.route('/feedback', methods=['POST'])
 @jwt_required()
 def submit_feedback():
-    """Submit user feedback."""
     try:
         data = request.get_json()
         user_id = get_jwt_identity()
@@ -196,7 +200,6 @@ def submit_feedback():
 
 @app.route('/notifications/<int:user_id>', methods=['PUT'])
 def mark_notifications_as_read(user_id):
-    """Mark all notifications for a user as read."""
     try:
         notifications = Notification.query.filter_by(user_id=user_id, is_read=False).all()
         for notification in notifications:
